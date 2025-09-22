@@ -21,7 +21,7 @@ We use statistical hypothesis testing to determine whether the average number of
 Install missing packages with:
 ```r
 install.packages(c("dplyr", "lubridate", "ggplot2", "here"))
-
+```
 ## 🚀 Analysis Workflow
 1. Load and Inspect Data
 • 	Import men’s and women’s international match results.
