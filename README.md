@@ -23,7 +23,8 @@ Install missing packages with:
 install.packages(c("dplyr", "lubridate", "ggplot2", "here"))
 ```
 ## 🚀 Analysis Workflow
-1. Load and Inspect Data
+
+## 1. Load and Inspect Data
 • 	Import men’s and women’s international match results.
 • 	Inspect structure and preview rows.
 
