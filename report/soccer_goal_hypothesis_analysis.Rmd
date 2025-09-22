@@ -1,0 +1,173 @@
+---
+title: "soccer_goal_hypothesis"
+author: "olayinka ogunneye"
+date: "2025-09-22"
+output: html_document
+---
+
+## Introduction
+
+The purpose of this analysis is to test whether **FIFA Women’s World Cup matches** have more goals on average than **FIFA Men’s World Cup matches**, focusing on matches played after January 1, 2002.  
+
+We will:
+
+1. Load and inspect the data  
+2. Filter for relevant matches  
+3. Create a new variable for total goals per match  
+4. Explore the data with descriptive statistics and visualizations  
+5. Conduct a hypothesis test to determine if women’s matches have significantly more goals  
+
+---
+
+### Step 1: Load Required Libraries
+
+```{r setup, message=FALSE, warning=FALSE}
+library(dplyr)      # for data manipulation
+library(lubridate)  # for working with dates
+library(ggplot2)    # for visualization
+library(here)      # for cleaner file paths
+```
+
+### Step 2: Load and Inspect the Data
+
+#### Load the datasets using here()
+```{r}
+women <- read.csv(here("data", "raw", "women_results.csv"))
+men   <- read.csv(here("data", "raw", "men_results.csv"))
+
+# Check structure
+str(women)
+str(men)
+
+# Peek at the first few rows
+head(women)
+head(men)
+```
+
+str() shows the structure of the dataset (columns, types, etc.).
+
+head() previews the first rows to confirm the data looks correct
+
+We only want official FIFA World Cup matches (not qualifiers or friendlies), and only those played after January 1, 2002.
+
+```{r}
+# Filter women's FIFA World Cup matches
+women_wc <- women %>%
+  filter(tournament == "FIFA World Cup", date >= as.Date("2002-01-01"))
+
+# Filter men's FIFA World Cup matches
+men_wc <- men %>%
+  filter(tournament == "FIFA World Cup", date >= as.Date("2002-01-01"))
+```
+
+#### Explanation:
+
+ keeps only rows meeting both conditions: tournament type and date.
+ 
+ ensures the date is treated as a proper date object.
+ 
+### Step 4: Create Total Goals Column
+ 
+ We add a new column  that sums the home and away team scores for each match.
+ 
+``` {r}
+women_wc <- women_wc %>%
+  mutate(total_goals = home_score + away_score)
+
+men_wc <- men_wc %>%
+  mutate(total_goals = home_score + away_score)
+```
+ 
+#### Explanation:
+creates a new variable.
+
+gives the total goals scored in each match
+
+```{r}
+# Summary statistics
+summary(women_wc$total_goals)
+summary(men_wc$total_goals)
+
+# Standard deviation
+sd(women_wc$total_goals)
+sd(men_wc$total_goals)
+```
+
+#### Explanation:
+
+gives min, quartiles, median, mean, and max.
+
+measures variability in goals per match
+
+### Histogram Comparison
+
+```{r}
+ggplot() +
+  geom_histogram(data = women_wc, aes(x = total_goals), 
+                 fill = "pink", alpha = 0.8, bins = 15) +
+  geom_histogram(data = men_wc, aes(x = total_goals), 
+                 fill = "lightblue", alpha = 0.8, bins = 15) +
+  labs(title = "Distribution of Total Goals per Match",
+       x = "Goals per Match", y = "Frequency") +
+  theme_minimal()
+```
+
+#### Explanation:
+
+Overlaid histograms show how the distributions of goals differ between men’s and women’s matches.
+
+### Boxplot Comparison
+
+```{r}
+combined <- bind_rows(
+  women_wc %>% select(total_goals) %>% mutate(gender = "Women"),
+  men_wc %>% select(total_goals) %>% mutate(gender = "Men")
+)
+
+ggplot(combined, aes(x = gender, y = total_goals, fill = gender)) +
+  geom_boxplot(alpha = 0.7) +
+  labs(title = "Goals per Match: Women vs Men",
+       x = "Match Type", y = "Total Goals") +
+  scale_fill_manual(values = c("pink", "lightblue")) +
+  theme_minimal()
+```
+
+### Explanation:
+
+ Boxplots highlight medians, interquartile ranges, and outliers.
+ 
+ Women’s matches show a higher median and more variability
+ 
+### Step 6: Hypothesis Test
+
+We now formally test whether women’s matches have more goals than men’s.
+
+This is a one-tailed Welch’s t-test.
+
+```{r}
+t_test_result <- t.test(
+  women_wc$total_goals,
+  men_wc$total_goals,
+  alternative = "greater",   # one-tailed: women > men
+  var.equal = FALSE          # Welch's t-test (doesn't assume equal variance)
+)
+
+t_test_result
+```
+
+#### Explanation:
+
+ tests if women’s matches have a higher mean.
+
+ uses Welch’s correction, which is safer when variances differ.
+
+ The output gives the t-statistic, degrees of freedom, p-value, and confidence interval.
+
+## Conclusion
+
+**Women’s matches average nearly 3 goals per game, compared to 2.5 for men’s.**
+
+**The t-test p-value is 0.0026, well below the 10% significance level.**
+
+**We reject the null hypothesis and conclude that women’s World Cup matches have significantly more goals on average than men’s.**
+
